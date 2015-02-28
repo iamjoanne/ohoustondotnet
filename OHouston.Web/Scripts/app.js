@@ -79,8 +79,6 @@
                 login: function (data, onSuccess, onFailure) { return login(data, onSuccess, onFailure); }
             };
         });
-
-
     app.service('oHoustonSvc', function ($http, $state, dataAccess) {
         var self = this; // Save reference
 
@@ -148,7 +146,6 @@
 
         this.init();
     });
-
     app.controller('MenuCtrl', function ($scope, $state, oHoustonSvc, dataAccess) {
         $scope.username = oHoustonSvc.getUsername();
         oHoustonSvc.awaitOHoustonStatusChange('MenuCtrl', function () {
@@ -205,41 +202,44 @@
         $scope.registerComplete = false;
         $scope.registerFormModel = {};
         $scope.doRegister = function () {
-
+            if ($scope.registerInProcess == true) { return; }
 
             $scope.registerInProcess = true;
             if ($scope.registerFormModel.Password && $scope.registerFormModel.Password == $scope.registerFormModel.ConfirmPassword) {
 
-                dataAccess.register($scope.registerFormModel, function (result) {
-                    dataAccess.login($scope.registerUsername, $scope.registerPassword,
-                        function (r) {
-                            oHoustonSvc.setToken({ token: r.data.access_token, username: $scope.registerFormModel.Username });
-                            $state.go('welcome');
-                            $scope.registerComplete = true;
-                            $scope.registerInProcess = false;
-                        },
-                        function (r) {
-                            $scope.registerComplete = true;
-                            $scope.registerInProcess = false;
-                            console.log('Register succeeded. Login failed.');
-                            console.log(r);
-                        });
-                }, function (result) {
-                    $scope.registerInProcess = false;
-                    if (result.data.ModelState) {
-                        $.each(result.data.ModelState, function (k, v) {
-                            $scope.registerForm[k].$valid = false;
-                            $scope.registerForm[k].$invalid = true;
-                            $scope.registerForm[k].errors = v;
-                        });
-                    } else {
-                        alert('something went wrong registering :(');
-                    }
-                });
+                dataAccess.register($scope.registerFormModel,
+                    function (result) {
+                        dataAccess.login({ Username: $scope.registerFormModel.Username, Password: $scope.registerFormModel.Password },
+                            function (r) {
+                                oHoustonSvc.setToken({ token: r.data.access_token, username: $scope.registerFormModel.Username });
+                                $state.go('welcome');
+                                $scope.registerComplete = true;
+                                $scope.registerInProcess = false;
+                            },
+                            function (r) {
+                                $scope.registerComplete = true;
+                                $scope.registerInProcess = false;
+                                console.log('Register succeeded. Login failed.');
+                                console.log(r);
+                            });
+                    },
+                    function (result) {
+                        console.log(result);
+                        $scope.registerInProcess = false;
+                        if (result.data.ModelState) {
+                            $.each(result.data.ModelState, function (k, v) {
+                                $scope.registerForm[k].$valid = false;
+                                $scope.registerForm[k].$invalid = true;
+                                $scope.registerForm[k].errors = v;
+                            });
+                        } else {
+                            alert('something went wrong registering :(');
+                        }
+                    });
+
             } else {
                 $scope.registerInProcess = false;
                 $scope.registerForm.Password.$invalid = true;
-                $scope.registerForm.Password.$pristine = false;
                 $scope.registerForm.Password.$valid = false;
                 $scope.registerForm.Password.errors = ['mismatched passwords'];
             }
