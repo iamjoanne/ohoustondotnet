@@ -170,7 +170,7 @@
 
                 dataAccess.login($scope.loginFormModel,
                     function (r) {
-                        $scope.loginInProcess = false;
+                        $scope.loginInProcess = true;
                         oHoustonSvc.setToken({ token: r.data.access_token, username: $scope.loginFormModel.Username });
                         $state.go('welcome');
                     },
